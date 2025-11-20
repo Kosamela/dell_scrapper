@@ -10,9 +10,7 @@ import time
 import re
 
 def dedupe_model_name(name):
-    # dzieli na słowa
     words = name.split()
-    # usuwa powtarzające się sekwencje słów (w prostym przypadku jeśli dwa razy cały ciąg)
     half = len(words)//2
     if len(words) >= 2 and words[:half] == words[half:half*2]:
         return " ".join(words[:half])
@@ -30,29 +28,23 @@ def get_dell_data(service_tag):
     try:
         driver.get("https://www.dell.com/support/home/pl-pl")
 
-        # --- Akceptacja cookies jeśli występuje ---
         try:
             cookie_btn = wait.until(EC.element_to_be_clickable((By.ID, "onetrust-accept-btn-handler")))
             cookie_btn.click()
         except:
             pass
 
-        # --- SEARCH BOX ---
         search = wait.until(EC.presence_of_element_located((By.ID, "mh-search-input")))
         search.send_keys(service_tag)
         search.send_keys(Keys.ENTER)
 
-        # --- WAIT FOR MAIN HEADER ---
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "h1")))
 
-        # --- CLICK SPECYFIKACJE PRODUKTU ---
         spec_btn = wait.until(
             EC.element_to_be_clickable((By.ID, "review-specs-drawer-trigger"))
         )
         spec_btn.click()
-
-        # --- WAIT FOR CONTENT TO LOAD (~2s) ---
-        time.sleep(2)  # Dell ładuje akordeony dynamicznie
+        time.sleep(2) 
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -72,7 +64,7 @@ def get_dell_data(service_tag):
         for item in items:
             text = item.get_text(" ", strip=True)
 
-            # CPU: ignoruj wpisy z "Label" lub "La bel"
+            # CPU: ignoruj wpisy takie jak w liscie, bo moga byc karty graficzn/wifi intela itd, mozna dodawac do listy po przecinku 
             if (("intel" in text.lower() or "ryzen" in text.lower())
                     and "label" not in text.lower()
                     and not any(k in text.lower() for k in ["wi-fi", "wireless", "bluetooth", "card", "network", "la bel", "graphics", "graficzny", "mod", "klawiatura", "technologia", "etykieta", "graficzna"])
@@ -88,12 +80,12 @@ def get_dell_data(service_tag):
             if any(k.lower() in text.lower() for k in disk_keywords) and not data["Dysk"]:
                 data["Dysk"] = text
 
-        # --- WARRANTY ---
+        #Gwarancja
         try:
             warr_div = wait.until(EC.presence_of_element_located((By.ID, "tt_warstatus_text")))
             data["Gwarancja"] = warr_div.get_attribute("innerText").strip()
         except:
-            # Jeśli brak elementu gwarancji → zły Service Tag
+            # Jeśli brak elementu gwarancji > zły Service Tag prawdopodobnie
             data["ZlyST"] = True
 
         return data
@@ -146,4 +138,5 @@ if __name__ == "__main__":
             })
 
     save_excel(results)
+
 
