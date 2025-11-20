@@ -126,7 +126,7 @@ def save_excel(data, file="dell_output.xlsx"):
 
 
 if __name__ == "__main__":
-    service_tags = ["9TSHKX3", "5CD251CHS6"]
+    service_tags = ["ST"]
     results = []
 
     for tag in service_tags:
@@ -146,3 +146,4 @@ if __name__ == "__main__":
             })
 
     save_excel(results)
+
